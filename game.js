@@ -22,6 +22,7 @@ let gameStart = false;
 let done = false;
 let lastWin;
 let screen;
+let bgm;
 
 class Map{
     // value key:
@@ -217,8 +218,32 @@ class Bomb{
             app.stage.removeChild(this.bomb);
         }   
     }
+
+    clear(){
+        this.exploded = 2;
+    }
 }
 
+class Music{
+    constructor(){
+        this.playing = false;
+        this.muted = false;
+        this.sound = PIXI.sound.Sound.from('bgm.mp3');
+        this.sound.loop = true;
+    }
+    isPlaying(){
+        return this.playing;
+    }
+    start(){
+        this.playing = true;
+        this.sound.play();
+        
+    }
+    stop(){
+        this.playing = false;
+        this.sound.stop();
+    }
+}
 async function loadAssets(){
     await PIXI.Assets.load('player1down.png');
     await PIXI.Assets.load('player1left.png');
@@ -479,10 +504,71 @@ function gameLoop() {
             player2 = new Player('black',10,8);
             fire1 = new PIXI.Graphics();
             fire2 = new PIXI.Graphics();
+            bgm = new Music();
+        }
+    } 
+    else if (done){
+        if(bgm.isPlaying()){
+            bgm.stop();
+        }
+        if(pressed['enter']){
+            app.stage.removeChild(screen);
+            player1.reset();
+            player2.reset();
+            if(p1bomb){
+                bomb1.clear();
+                p1bomb = false;
+                app.stage.removeChild(fire1);
+                map.setSpace(bomb1.getX(), bomb1.getY(), 0)
+                if(map.getSpace(bomb1.getX()-1, bomb1.getY()) < 10){
+                    map.setSpace(bomb1.getX()-1, bomb1.getY(), 0)
+                }
+                //left
+                if(map.getSpace(bomb1.getX()+1, bomb1.getY()) < 10){
+                    map.setSpace(bomb1.getX()+1, bomb1.getY(), 0);
+                }
+                //up
+                if(map.getSpace(bomb1.getX(), bomb1.getY()-1) < 10){
+                    map.setSpace(bomb1.getX(), bomb1.getY()-1, 0);
+                }
+                //down
+                if(map.getSpace(bomb1.getX(), bomb1.getY()+1) < 10){
+                    map.setSpace(bomb1.getX(), bomb1.getY()+1, 0);
+                }
+                p1bomb = false;
+
+            }
+            if(p2bomb){
+                bomb2.clear();
+                p2bomb = false;
+                app.stage.removeChild(fire2);
+                map.setSpace(bomb2.getX(), bomb2.getY(), 0)
+                if(map.getSpace(bomb2.getX()-1, bomb2.getY()) < 10){
+                    map.setSpace(bomb2.getX()-1, bomb2.getY(), 0)
+                }
+                //left
+                if(map.getSpace(bomb2.getX()+1, bomb2.getY()) < 10){
+                    map.setSpace(bomb2.getX()+1, bomb2.getY(), 0);
+                }
+                //up
+                if(map.getSpace(bomb2.getX(), bomb2.getY()-1) < 10){
+                    map.setSpace(bomb2.getX(), bomb2.getY()-1, 0);
+                }
+                //down
+                if(map.getSpace(bomb2.getX(), bomb2.getY()+1) < 10){
+                    map.setSpace(bomb2.getX(), bomb2.getY()+1, 0);
+                }
+            }
+            done = false;
         }
     }
     //past start screen
     else{
+        //load music
+        if(!bgm.isPlaying()){
+            bgm.start();
+        }
+
         //process movement
         processInput();
 
@@ -507,20 +593,20 @@ function gameLoop() {
             bomb1.update() //update bomb timer
 
             //set fire
-            if(bomb1.explode() == 1){ 
+            if(bomb1.explode() == 1){
                 fire1.clear()
                 fire1.beginFill(0xf97e36);
                 fire1.drawRect(0, 0, 96,96);
                 
                 map.setSpace(bomb1.getX(), bomb1.getY(), 1)
                 //right
-                if(map.getSpace(bomb1.getX()-1, bomb1.getY()) < 10){
-                    map.setSpace(bomb1.getX()-1, bomb1.getY(), 1)
+                if(map.getSpace(bomb1.getX()+1, bomb1.getY()) < 10){
+                    map.setSpace(bomb1.getX()+1, bomb1.getY(), 1)
                     fire1.drawRect(96,0,96,96);
                 }
                 //left
-                if(map.getSpace(bomb1.getX()+1, bomb1.getY()) < 10){
-                    map.setSpace(bomb1.getX()+1, bomb1.getY(), 1)
+                if(map.getSpace(bomb1.getX()-1, bomb1.getY()) < 10){
+                    map.setSpace(bomb1.getX()-1, bomb1.getY(), 1)
                     fire1.drawRect(-96,0,96,96);
                 }
                 //up
@@ -629,31 +715,22 @@ function gameLoop() {
         }
 
         //check win condition
-        if(!done){
-            if(!player1.isAlive() || !player2.isAlive()){
-                done = true;
-                app.stage.addChild(screen); //render end screen
+        if(!player1.isAlive() || !player2.isAlive()){
+            done = true;
+            app.stage.addChild(screen); //render end screen
 
-                //check for winner and set corresponding end screen
-                if(!player1.isAlive() && !player2.isAlive()){
-                    screen.texture = PIXI.Texture.from('end3.png');
-                }
-                else if(!player1.isAlive()){
-                    screen.texture = PIXI.Texture.from('end2.png');
-                }
-                else{
-                    screen.texture = PIXI.Texture.from('end1.png');
-                }
+            //check for winner and set corresponding end screen
+            if(!player1.isAlive() && !player2.isAlive()){
+                screen.texture = PIXI.Texture.from('end3.png');
+            }
+            else if(!player1.isAlive()){
+                screen.texture = PIXI.Texture.from('end2.png');
+            }
+            else{
+                screen.texture = PIXI.Texture.from('end1.png');
             }
         }
-        else{ //when game is done reset game on enter
-            if(pressed['enter']){
-                app.stage.removeChild(screen);
-                player1.reset();
-                player2.reset();
-                done = false;
-            }
-        }
+        
     }
 }
 
@@ -662,7 +739,7 @@ function gameLoop() {
 
     const app = new PIXI.Application();
     await app.init({ width: 1056, height: 864 });
-    document.body.appendChild(app.canvas);
+    document.getElementById("game").replaceChild(app.canvas, document.getElementById("replace"));
     
     //render background
     await PIXI.Assets.load('bombmap.png');
