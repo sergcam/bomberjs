@@ -1,4 +1,6 @@
-let app;
+// import { Application, Assets, Sprite } from 'pixi.js';
+async function init(){
+
 let background;
 let player1, player2;
 let map;
@@ -178,15 +180,14 @@ class Bomb{
         this.ypos = y;
 
         //generate and render bomb
-        let circle = new PIXI.Graphics();
-        circle.beginFill(0x000000);
-        circle.drawCircle(0, 0, 40);
-        circle.endFill();
-        circle.x = x * 96 + 48;
-        circle.y = y * 96 + 48;
-        app.stage.addChild(circle);
+        let bomb = new PIXI.Graphics();
+        bomb.circle(0, 0, 40);
+        bomb.fill(0x000000);
+        bomb.x = x * 96 + 48;
+        bomb.y = y * 96 + 48;
+        app.stage.addChild(bomb);
 
-        this.circle = circle;
+        this.bomb = bomb;
 
     }
 
@@ -213,9 +214,23 @@ class Bomb{
         }
         else if(this.timer > this.detTime){
             this.exploded = 1;
-            app.stage.removeChild(this.circle);
+            app.stage.removeChild(this.bomb);
         }   
     }
+}
+
+async function loadAssets(){
+    await PIXI.Assets.load('player1down.png');
+    await PIXI.Assets.load('player1left.png');
+    await PIXI.Assets.load('player1right.png');
+    await PIXI.Assets.load('player1up.png');
+    await PIXI.Assets.load('player2down.png');
+    await PIXI.Assets.load('player2left.png');
+    await PIXI.Assets.load('player2right.png');
+    await PIXI.Assets.load('player2up.png');
+    await PIXI.Assets.load('end1.png');
+    await PIXI.Assets.load('end2.png');
+    await PIXI.Assets.load('end3.png');
 }
 
 //sets key pressed indicators at key down
@@ -644,21 +659,30 @@ function gameLoop() {
 
 //---
 // Create the application helper and add its render target to the page
-app = new PIXI.Application({ width: 1056, height: 864 });
-document.body.appendChild(app.view);
 
-//render background
-background = PIXI.Sprite.from('bombmap.png');
-app.stage.addChild(background);
+    const app = new PIXI.Application();
+    await app.init({ width: 1056, height: 864 });
+    document.body.appendChild(app.canvas);
+    
+    //render background
+    await PIXI.Assets.load('bombmap.png');
+    background = PIXI.Sprite.from('bombmap.png');
+    app.stage.addChild(background);
+    
+    //render start screen
+    await PIXI.Assets.load('start.png');
+    screen = PIXI.Sprite.from('start.png');
+    app.stage.addChild(screen);
+    
+    //setup key listeners
+    setupControls();
 
-//render start screen
-screen = PIXI.Sprite.from('start.png');
-app.stage.addChild(screen);
+    //load assets
+    loadAssets();
 
-//setup key listeners
-setupControls();
-
-//start gameloop at 60fps
-setInterval(gameLoop, 1000/60);
+    //start gameloop at 60fps
+    setInterval(gameLoop, 1000/60);
+}
+init();
 
 
